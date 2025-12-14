@@ -412,7 +412,54 @@ editClose?.addEventListener("click", closeEditModal);
 editCancel?.addEventListener("click", closeEditModal);
 
 editModal?.addEventListener("click", (e) => {
-  if (e.target === editModal) closeEditModal();
+  async function openEditEvent(idEvent) {
+  editingEventId = idEvent;
+
+  // abrir modal
+  eventForm.classList.add("show");
+  eventForm.setAttribute("aria-hidden", "false");
+
+  // meter min date (o teu setMinTodayOnEventDate)
+  setMinTodayOnEventDate();
+
+  // carregar lista de coleções do user no form
+  await loadCollectionsForForm();
+
+  // ir buscar coleções do evento e marcar
+  const evCols = await fetch(`controllers/event_collections.php?event=${idEvent}`).then(r => r.json());
+  selectedCollections.clear();
+  evCols.forEach(c => selectedCollections.add(String(c.id_collection)));
+
+  // marcar os checkboxes das coleções já selecionadas
+  document.querySelectorAll("#f-col-list .pick-card").forEach(card => {
+    const idCol = String(card.dataset.id);
+    const chk = card.querySelector("input");
+    if (chk) chk.checked = selectedCollections.has(idCol);
+  });
+
+  // carregar items blocks dessas coleções
+  selectedItems.clear();
+  for (const idCol of selectedCollections) {
+    await loadItemsForCollection(idCol);
+  }
+
+  // buscar items do evento (precisas deste endpoint)
+  const evItems = await fetch(`controllers/event_items.php?event=${idEvent}`).then(r => r.json());
+  // evItems = [{id_item: 10}, {id_item: 13}...]
+
+  // marcar items
+  evItems.forEach(it => {
+    // se tu guardas selectedItems como "colId:itemId", precisamos de descobrir colId do item
+    // opção simples: o endpoint já devolver id_collection junto.
+    // ex: [{id_item:10, id_collection:27}]
+    const key = `${it.id_collection}:${it.id_item}`;
+    selectedItems.add(key);
+
+    const cb = document.querySelector(`.items-block[data-col="${it.id_collection}"] input[data-item="${it.id_item}"]`);
+    if (cb) cb.checked = true;
+  });
+}
+
 });
 
 editSave?.addEventListener("click", async () => {

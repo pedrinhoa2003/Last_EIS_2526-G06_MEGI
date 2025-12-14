@@ -1314,22 +1314,7 @@ body.no-auth #d-review {
 
 /* === NOTIFICATIONS MODAL – cards estilo lista de eventos === */
 
-#notifModal .modal-content {
-  max-width: 560px;
-  border-radius: 18px;
-  padding: 26px 30px 24px;
-}
 
-#notifModal h2 {
-  font-size: 1.35rem;
-  margin-bottom: 16px;
-}
-
-.notif-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
 .notif-card {
   background: #f9fafb;
@@ -1450,3 +1435,82 @@ body.no-auth #d-review {
 }
 .ev-owner-actions{display:flex; gap:10px;}
 .ev-owner-actions .trash{margin-right:6px; font-size:14px; vertical-align:middle;}
+
+/* ============================
+   NOTIFICATIONS MODAL SCROLL
+   ============================ */
+
+#notifModal .modal-content {
+  max-height: 80vh;            /* modal nunca passa do ecrã */
+  display: flex;
+  flex-direction: column;
+}
+
+/* área scrollável */
+#notif-modal-list {
+  margin-top: 12px;
+  overflow-y: auto;
+  max-height: 60vh;            /* altura do scroll */
+  padding-right: 6px;
+}
+
+/* scroll bonito (Chrome / Edge) */
+#notif-modal-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#notif-modal-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.25);
+  border-radius: 4px;
+}
+
+#notif-modal-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* cards continuam normais */
+.notif-card {
+  margin-bottom: 12px;
+}
+
+/* ===============================
+   NOTIFICATIONS MODAL – SCROLL
+   =============================== */
+
+/* modal overlay (já tens isto, mas garantimos flex) */
+#notifModal.modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* caixa branca */
+#notifModal .modal-content {
+  max-height: 85vh;          /* limite da altura total */
+  display: flex;
+  flex-direction: column;
+}
+
+/* zona onde entram os cards */
+#notif-modal-list {
+  flex: 1;                   /* ocupa o espaço disponível */
+  overflow-y: auto;          /* SCROLL AQUI */
+  overflow-x: hidden;
+  padding-right: 8px;
+}
+
+/* opcional: limite adicional para segurança */
+#notif-modal-list .notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* scrollbar bonita (opcional) */
+#notif-modal-list::-webkit-scrollbar {
+  width: 8px;
+}
+#notif-modal-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+}
+

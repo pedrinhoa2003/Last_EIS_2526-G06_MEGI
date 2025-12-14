@@ -181,7 +181,7 @@ require_once __DIR__ . "/partials/bootstrap.php";
     <input type="hidden" id="f-id" /> 
 
     <label>Name <input id="f-name" required /></label>
-    <label>Date <input id="f-date" type="datetime-local" required /></label>
+    <label>Date <input id="f-date" type="date" required /></label>
     <label>Description <textarea id="f-desc" rows="4"></textarea></label>
     <label>Location <input id="f-loc" /></label>
       

@@ -177,22 +177,51 @@ if ($method === "POST") {
  * PUT → editar (apenas se created_by = user)
  */
 if ($method === "PUT") {
+
     $id_event    = (int)($data["id_event"] ?? 0);
-    $name        = trim($data["name"]        ?? "");
-    $event_date  = trim($data["event_date"]  ?? "");
+    $name        = trim($data["name"] ?? "");
+    $event_date  = trim($data["event_date"] ?? "");
     $description = trim($data["description"] ?? "") ?: null;
-    $location    = trim($data["location"]    ?? "") ?: null;
+    $location    = trim($data["location"] ?? "") ?: null;
+
+    $collections = $data["collections"] ?? [];
+    $items       = $data["items"] ?? [];
 
     if (!$id_event || !$name || !$event_date) {
-        echo json_encode(["ok" => false, "error" => "missing id/name/date"]);
+        echo json_encode(["ok" => false, "error" => "missing data"]);
         exit;
     }
 
-    $resp = EventDAL::updateEvent($id_event, $name, $event_date, $description, $location, $id_user);
+    $db = DB::conn();
+    $db->begin_transaction();
 
-    echo json_encode($resp);
+    try {
+        $resp = EventDAL::updateEvent(
+            $id_event,
+            $name,
+            $event_date,
+            $description,
+            $location,
+            $id_user
+        );
+
+        if (!$resp["ok"]) {
+            throw new Exception("not_owner_or_not_found");
+        }
+
+        EventDAL::replaceCollectionsForEvent($id_event, $collections);
+        EventDAL::replaceItemsForEvent($id_event, $items);
+
+        $db->commit();
+        echo json_encode(["ok" => true]);
+    } catch (Exception $e) {
+        $db->rollback();
+        echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+    }
+
     exit;
 }
+
 
 /**
  * DELETE → apagar (apenas se created_by = user)

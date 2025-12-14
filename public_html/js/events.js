@@ -1,5 +1,7 @@
 // coleções escolhidas no modal PARTICIPATE
 let selectedParticipateCollections = new Set();
+let collectionNameById = {};
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const eventsContainer = document.getElementById("events");
@@ -30,6 +32,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnList   = document.getElementById("btn-list");
   const btnNew    = document.getElementById("btn-new");
   const eventForm = document.getElementById("eventForm");
+  
+function setMinTodayOnEventDate() {
+  const fDate = document.getElementById("f-date");
+  if (!fDate) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const minDate = `${yyyy}-${mm}-${dd}`;
+
+  fDate.setAttribute("min", minDate);
+  fDate.min = minDate; // redundante de propósito
+}
+
+
+setMinTodayOnEventDate();
+
 
   const sortSelect   = document.getElementById("sort");
   const statusSelect = document.getElementById("status");
@@ -510,6 +532,11 @@ async function loadUserCollectionsForParticipate() {
     const res = await fetch("controllers/collections.php?mine=1");
     const cols = await res.json();
 
+collectionNameById = {};
+cols.forEach(c => {
+  collectionNameById[String(c.id_collection)] = c.name;
+});
+
     if (!cols.length) {
       pCollections.innerHTML = "<p class='muted'>Não tens coleções.</p>";
       return;
@@ -556,24 +583,27 @@ async function loadItemsForParticipate(idCol) {
     block.classList.add("participate-items-block");
     block.dataset.col = idCol;
 
-    if (!items.length) {
-      block.innerHTML = `
-        <h4>Items from collection ${idCol}</h4>
-        <p class="muted">Esta coleção não tem itens.</p>
-      `;
-    } else {
-      block.innerHTML = `
-        <h4>Items from collection ${idCol}</h4>
-        <div class="mini-grid">
-          ${items.map(i => `
-            <label class="mini-card">
-              <input type="checkbox" value="${i.id_item}" data-col="${idCol}">
-              <span>${i.name}</span>
-            </label>
-          `).join("")}
-        </div>
-      `;
-    }
+    const colName = collectionNameById[String(idCol)] || `Collection ${idCol}`;
+
+if (!items.length) {
+  block.innerHTML = `
+    <h4>Items from ${colName}</h4>
+    <p class="muted">Esta coleção não tem itens.</p>
+  `;
+} else {
+  block.innerHTML = `
+    <h4>Items from ${colName}</h4>
+    <div class="mini-grid">
+      ${items.map(i => `
+        <label class="mini-card">
+          <input type="checkbox" value="${i.id_item}" data-col="${idCol}">
+          <span>${i.name}</span>
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+
 
     pItems.appendChild(block);
   } catch (err) {
@@ -906,11 +936,13 @@ pConfirm?.addEventListener("click", async () => {
       const block = document.createElement("div");
       block.className = "items-block";
       block.dataset.col = idCol;
+      const colName = collectionNameById[String(idCol)] || `Coleção ${idCol}`;
+
 
       if (!items.length) {
         block.innerHTML = `
           <div class="items-head">
-            <strong>Coleção ${idCol}</strong>
+            <strong>${colName}</strong>
             <button class="remove-col" data-col="${idCol}"
                     style="float:right; background:none; border:none; font-size:18px; cursor:pointer;">
               ❌
@@ -922,7 +954,7 @@ pConfirm?.addEventListener("click", async () => {
       } else {
         block.innerHTML = `
           <div class="items-head">
-            <strong>Itens da coleção ${idCol}</strong>
+            <strong>Itens da coleção ${colName}</strong>
             <button class="remove-col" data-col="${idCol}"
                     style="float:right; background:none; border:none; font-size:18px; cursor:pointer;">
               ❌
@@ -934,7 +966,7 @@ pConfirm?.addEventListener("click", async () => {
                 (i) => `
               <label class="mini-card">
                 <input type="checkbox" data-item="${i.id_item}" />
-                <img src="img/item-placeholder.jpg" alt="">
+                
                 <span>${i.name}</span>
               </label>
             `
@@ -1029,6 +1061,9 @@ pConfirm?.addEventListener("click", async () => {
       if (fDate)  fDate.value = "";
       if (fDesc)  fDesc.value = "";
       if (fLoc)   fLoc.value  = "";
+      
+      setMinTodayOnEventDate();
+
 
       eventForm.classList.add("show");
       eventForm.setAttribute("aria-hidden", "false");
@@ -1074,6 +1109,12 @@ pConfirm?.addEventListener("click", async () => {
       const cols = await fetch("controllers/collections.php?mine=1").then(
         (r) => r.json()
       );
+      
+            collectionNameById = {};
+      cols.forEach(c => {
+        collectionNameById[String(c.id_collection)] = c.name;
+      });
+
 
       if (!cols.length) {
         fColList.innerHTML = "<p class='muted'>Não tens coleções.</p>";
@@ -1085,7 +1126,7 @@ pConfirm?.addEventListener("click", async () => {
           (c) => `
         <label class="pick-card" data-id="${c.id_collection}">
           <input type="checkbox" />
-          <img src="img/collection-placeholder.jpg" alt="">
+          
           <span>${c.name}</span>
         </label>
       `
@@ -1128,6 +1169,20 @@ pConfirm?.addEventListener("click", async () => {
 
     const name = document.getElementById("f-name")?.value.trim();
     const date = document.getElementById("f-date")?.value;
+    
+    // bloquear datas antes de hoje (mesmo que escrevam à mão)
+        const picked = new Date(date);
+        picked.setHours(0,0,0,0);
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        if (picked < today) {
+          alert("Não podes escolher uma data antes de hoje.");
+          document.getElementById("f-date").value = "";
+          return;
+}
+
     const desc = document.getElementById("f-desc")?.value.trim();
     const loc  = document.getElementById("f-loc")?.value.trim();
 
@@ -1153,18 +1208,22 @@ pConfirm?.addEventListener("click", async () => {
     let method  = "POST";
     let payload = {};
 
-    if (editingEventId) {
-      // ➜ UPDATE
-      method  = "PUT";
-      payload = { ...basePayload, id_event: editingEventId };
-    } else {
-      // ➜ CREATE (como tinhas)
-      payload = {
-        ...basePayload,
-        collections: Array.from(selectedCollections),
-        items: Array.from(selectedItems).map((k) => k.split(":")[1])
-      };
-    }
+   if (editingEventId) {
+  method = "PUT";
+  payload = {
+    ...basePayload,
+    id_event: editingEventId,
+    collections: Array.from(selectedCollections),
+    items: Array.from(selectedItems).map(k => k.split(":")[1])
+  };
+} else {
+  method = "POST";
+  payload = {
+    ...basePayload,
+    collections: Array.from(selectedCollections),
+    items: Array.from(selectedItems).map(k => k.split(":")[1])
+  };
+}
 
     try {
       const r = await fetch("controllers/events.php", {

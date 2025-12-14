@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!homeAlertsBox) return;
 
     try {
-      const res = await fetch("controllers/event_notifications.php?days=7");
+      const res = await fetch("controllers/event_notifications.php?days=365");
 
       if (res.status === 401) {
         homeAlertsBox.style.display = "none";

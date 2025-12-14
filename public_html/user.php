@@ -332,29 +332,46 @@ $participatingEvents = EventDAL::getParticipationByUser($userId);
     <h2>Change Password</h2>
 
     <form id="changePasswordForm">
+
       <div class="password-field">
-        <input type="password" id="currentPassword" required>
+        <input 
+          type="password" 
+          id="currentPassword" 
+          placeholder="Current password"
+          required
+        >
         <button type="button" class="toggle-password" data-target="currentPassword">👁️</button>
-    </div>
+      </div>
 
-    <div class="password-field">
-        <input type="password" id="newPassword" required>
+      <div class="password-field">
+        <input 
+          type="password" 
+          id="newPassword" 
+          placeholder="New password"
+          required
+        >
         <button type="button" class="toggle-password" data-target="newPassword">👁️</button>
-    </div>
+      </div>
 
-    <div class="password-field">
-        <input type="password" id="confirmPassword" required>
+      <div class="password-field">
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          placeholder="Confirm new password"
+          required
+        >
         <button type="button" class="toggle-password" data-target="confirmPassword">👁️</button>
-    </div>
-
+      </div>
 
       <div class="modal-buttons">
         <button type="submit">💾 Change</button>
         <button type="button" id="cancelPasswordBtn">❌ Cancel</button>
       </div>
+
     </form>
   </div>
 </div>
+
 
     
   <script src="js/user.js"></script>

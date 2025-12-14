@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if (btnDelete) {
         btnDelete.addEventListener("click", () => {
-            if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
+            if (!confirm("Are you sure you want to delete this item from this collection? This action cannot be undone.")) {
                 return;
             }
 

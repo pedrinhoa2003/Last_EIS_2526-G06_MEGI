@@ -11,14 +11,8 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $id_item = (int)$_GET['id'];
 $item = ItemDAL::getById($id_item);
-// Identificar coleção correta (se vier no URL)// Prioridade 1: URL
-if (isset($_GET['col'])) {
-    $collectionId = (int) $_GET['col'];
-}
-// Prioridade 2: coleção trazida do ItemDAL
-else {
-    $collectionId = (int) $item['id_collection'];
-}
+// Identificar coleção correta (se vier no URL)
+$collectionId = isset($_GET['col']) ? (int) $_GET['col'] : null;
 
 
 if (!$item) {

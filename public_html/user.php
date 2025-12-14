@@ -221,8 +221,16 @@ $pastEvents     = EventDAL::getPastParticipationByUser($userId);
                 <div class="event-card">
                     <h3><?= htmlspecialchars($ev["name"]) ?></h3>
                     <p><strong>Date:</strong> <?= htmlspecialchars($ev["event_date"]) ?></p>
-                    <p><strong>Location:</strong> <?= htmlspecialchars($ev["location"]) ?></p>
-                    <p><strong>Collection:</strong> <?= htmlspecialchars($ev["collection_name"]) ?></p>
+
+                    <p><strong>Collections:</strong></p>
+                    <ul style="list-style: none; padding: 0;">
+                        <?php foreach ($ev["collections"] as $coll): ?>
+                            <li class="category-badge" style="display:inline-block; margin-bottom:5px;">
+                                <?= htmlspecialchars($coll["collection_name"]) ?> 
+                                <small>(<?= count($coll["items"]) ?> items)</small>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
 
                     <a href="event.php?id=<?= $ev['id_event'] ?>" class="btn">View Event</a>
                 </div>
@@ -243,15 +251,23 @@ $pastEvents     = EventDAL::getPastParticipationByUser($userId);
                     <h3><?= htmlspecialchars($ev["name"]) ?></h3>
                     <p><strong>Date:</strong> <?= htmlspecialchars($ev["event_date"]) ?></p>
                     <p><strong>Location:</strong> <?= htmlspecialchars($ev["location"]) ?></p>
-                    <p><strong>Collection:</strong> <?= htmlspecialchars($ev["collection_name"]) ?></p>
+                    
+                    <div class="participated-collections" style="margin-top: 10px;">
+                        <small style="display:block; color:#666; margin-bottom: 5px;">Collections taken:</small>
+                        <?php foreach ($ev["collections"] as $coll): ?>
+                            <span class="category-badge" style="background: #ddd; color: #444; font-size: 11px;">
+                                <?= htmlspecialchars($coll["collection_name"]) ?> 
+                                (<?= count($coll["items"]) ?> items)
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
 
-                    <a href="event.php?id=<?= $ev['id_event'] ?>" class="btn">View Event</a>
+                    <a href="event.php?id=<?= $ev['id_event'] ?>" class="btn" style="margin-top: 15px;">View Event</a>
                 </div>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </section>
-
 
 <!-- ========================== -->
 <!-- WISHLIST SECTION -->

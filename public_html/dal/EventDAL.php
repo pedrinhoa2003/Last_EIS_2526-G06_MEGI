@@ -162,18 +162,18 @@ class EventDAL {
     return $participations;
 }
 
-//eventos futuros que o user vai participar
 public static function getUpcomingParticipationByUser($id_user) {
     $db = DB::conn();
 
+    // 1) Procurar todas as participações futuras
     $stmt = $db->prepare("
         SELECT 
             e.id_event,
-            e.name,
+            e.name AS event_name,
             e.event_date,
             e.location,
+            c.id_collection,
             c.name AS collection_name,
-            uep.id_collection,
             uep.id_participation
         FROM user_event_participation uep
         JOIN events e ON e.id_event = uep.id_event
@@ -185,36 +185,65 @@ public static function getUpcomingParticipationByUser($id_user) {
 
     $stmt->bind_param("i", $id_user);
     $stmt->execute();
-    $participations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rawResults = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    // itens escolhidos
-    foreach ($participations as &$p) {
+    $events = [];
+
+    // 2) Agrupar coleções por evento no PHP
+    foreach ($rawResults as $row) {
+        $eid = $row['id_event'];
+
+        // Se o evento ainda não está no array, criamos a entrada base dele
+        if (!isset($events[$eid])) {
+            $events[$eid] = [
+                "id_event"    => $row["id_event"],
+                "name"        => $row["event_name"],
+                "event_date"  => $row["event_date"],
+                "location"    => $row["location"],
+                "collections" => [] // Array para guardar várias coleções
+            ];
+        }
+
+        // Preparamos os dados da coleção
+        $participationId = $row["id_participation"];
+        $collectionData = [
+            "id_collection"   => $row["id_collection"],
+            "collection_name" => $row["collection_name"],
+            "items"           => []
+        ];
+
+        // 3) Procurar itens para ESTA participação específica
         $stmt2 = $db->prepare("
             SELECT i.name
             FROM user_event_items uei
             JOIN items i ON i.id_item = uei.id_item
             WHERE uei.id_participation = ?
         ");
-        $stmt2->bind_param("i", $p["id_participation"]);
+        $stmt2->bind_param("i", $participationId);
         $stmt2->execute();
-        $p["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $collectionData["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt2->close();
+
+        // Adicionamos esta coleção ao evento correspondente
+        $events[$eid]["collections"][] = $collectionData;
     }
 
-    return $participations;
+    // Retornamos apenas os valores do array (remove as chaves ID do array associativo)
+    return array_values($events);
 }
-
-//evetnso passados que o user participou
+// Eventos passados que o user participou
 public static function getPastParticipationByUser($id_user) {
     $db = DB::conn();
 
+    // 1) Procurar todas as participações passadas
     $stmt = $db->prepare("
         SELECT 
             e.id_event,
-            e.name,
+            e.name AS event_name,
             e.event_date,
             e.location,
+            c.id_collection,
             c.name AS collection_name,
-            uep.id_collection,
             uep.id_participation
         FROM user_event_participation uep
         JOIN events e ON e.id_event = uep.id_event
@@ -226,23 +255,52 @@ public static function getPastParticipationByUser($id_user) {
 
     $stmt->bind_param("i", $id_user);
     $stmt->execute();
-    $participations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rawResults = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    foreach ($participations as &$p) {
+    $events = [];
+
+    // 2) Agrupar coleções por evento no PHP
+    foreach ($rawResults as $row) {
+        $eid = $row['id_event'];
+
+        // Se o evento ainda não está no array, criamos a entrada base
+        if (!isset($events[$eid])) {
+            $events[$eid] = [
+                "id_event"    => $row["id_event"],
+                "name"        => $row["event_name"],
+                "event_date"  => $row["event_date"],
+                "location"    => $row["location"],
+                "collections" => [] 
+            ];
+        }
+
+        // Preparar a estrutura da coleção
+        $participationId = $row["id_participation"];
+        $collectionData = [
+            "id_collection"   => $row["id_collection"],
+            "collection_name" => $row["collection_name"],
+            "items"           => []
+        ];
+
+        // 3) Procurar itens para esta participação (coleção)
         $stmt2 = $db->prepare("
             SELECT i.name
             FROM user_event_items uei
             JOIN items i ON i.id_item = uei.id_item
             WHERE uei.id_participation = ?
         ");
-        $stmt2->bind_param("i", $p["id_participation"]);
+        $stmt2->bind_param("i", $participationId);
         $stmt2->execute();
-        $p["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $collectionData["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt2->close();
+
+        // Adicionar a coleção ao array de coleções do evento
+        $events[$eid]["collections"][] = $collectionData;
     }
 
-    return $participations;
+    // Retornar os eventos limpos (sem as chaves associativas do ID)
+    return array_values($events);
 }
-
 
 // UPDATE EVENT (OWNER ONLY)
 public static function updateEvent($id_event, $name, $event_date, $description, $location, $id_user) {

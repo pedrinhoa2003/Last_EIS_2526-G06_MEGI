@@ -178,7 +178,9 @@ $showNavbarSearch = false;
       
 require_once __DIR__ . "/dal/EventDAL.php";
 $interestedEvents = EventDAL::getInterestedByUser($userId);
-$participatingEvents = EventDAL::getParticipationByUser($userId);
+$upcomingEvents = EventDAL::getUpcomingParticipationByUser($userId);
+$pastEvents     = EventDAL::getPastParticipationByUser($userId);
+
 ?>
 
 <!-- ========================== -->
@@ -209,37 +211,47 @@ $participatingEvents = EventDAL::getParticipationByUser($userId);
 <!-- EVENT PARTICIPATION -->
 <!-- ========================== -->
 <section class="events-section">
-    <h2>🎫 Events I'm Participating In</h2>
+    <h2>Events I'm Going To</h2>
 
-    <?php if (empty($participatingEvents)): ?>
-        <p style="color:#777;">You are not participating in any event yet.</p>
+    <?php if (empty($upcomingEvents)): ?>
+        <p style="color:#777;">No upcoming events.</p>
     <?php else: ?>
         <div class="events-grid">
-            <?php foreach ($participatingEvents as $ev): ?>
+            <?php foreach ($upcomingEvents as $ev): ?>
                 <div class="event-card">
                     <h3><?= htmlspecialchars($ev["name"]) ?></h3>
                     <p><strong>Date:</strong> <?= htmlspecialchars($ev["event_date"]) ?></p>
                     <p><strong>Location:</strong> <?= htmlspecialchars($ev["location"]) ?></p>
-                    <p><strong>Collection:</strong> <?= htmlspecialchars($ev['collection_name']) ?></p>
-
-                    <?php if (!empty($ev['items'])): ?>
-                        <p><strong>Items:</strong></p>
-                        <ul style="margin-top: -8px;">
-                            <?php foreach ($ev['items'] as $item): ?>
-                                <li><?= htmlspecialchars($item['name']) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
+                    <p><strong>Collection:</strong> <?= htmlspecialchars($ev["collection_name"]) ?></p>
 
                     <a href="event.php?id=<?= $ev['id_event'] ?>" class="btn">View Event</a>
-                    
-                    <button class="remove-participation-btn" data-id="<?= $ev['id_event'] ?>">✖</button>
-
                 </div>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </section>
+
+<section class="events-section">
+    <h2>Events I Attended</h2>
+
+    <?php if (empty($pastEvents)): ?>
+        <p style="color:#777;">You haven't attended any events yet.</p>
+    <?php else: ?>
+        <div class="events-grid">
+            <?php foreach ($pastEvents as $ev): ?>
+                <div class="event-card past-event">
+                    <h3><?= htmlspecialchars($ev["name"]) ?></h3>
+                    <p><strong>Date:</strong> <?= htmlspecialchars($ev["event_date"]) ?></p>
+                    <p><strong>Location:</strong> <?= htmlspecialchars($ev["location"]) ?></p>
+                    <p><strong>Collection:</strong> <?= htmlspecialchars($ev["collection_name"]) ?></p>
+
+                    <a href="event.php?id=<?= $ev['id_event'] ?>" class="btn">View Event</a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
+
 
 <!-- ========================== -->
 <!-- WISHLIST SECTION -->

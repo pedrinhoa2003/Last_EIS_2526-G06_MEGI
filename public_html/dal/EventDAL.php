@@ -118,7 +118,7 @@ class EventDAL {
     }
 
     // =======================================
-    // 👉 NOVO: EVENTOS QUE O USER VAI PARTICIPAR
+    // NOVO: EVENTOS QUE O USER VAI PARTICIPAR
     // =======================================
     public static function getParticipationByUser($id_user) {
     $db = DB::conn();
@@ -144,7 +144,7 @@ class EventDAL {
     $stmt->execute();
     $participations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    // Buscar os itens escolhidos em cada participação
+    // os itens escolhidos em cada participação
     foreach ($participations as &$p) {
         $stmt2 = $db->prepare("
             SELECT i.name
@@ -162,9 +162,89 @@ class EventDAL {
     return $participations;
 }
 
-// ==========================
+//eventos futuros que o user vai participar
+public static function getUpcomingParticipationByUser($id_user) {
+    $db = DB::conn();
+
+    $stmt = $db->prepare("
+        SELECT 
+            e.id_event,
+            e.name,
+            e.event_date,
+            e.location,
+            c.name AS collection_name,
+            uep.id_collection,
+            uep.id_participation
+        FROM user_event_participation uep
+        JOIN events e ON e.id_event = uep.id_event
+        JOIN collections c ON c.id_collection = uep.id_collection
+        WHERE uep.id_user = ?
+          AND e.event_date >= CURDATE()
+        ORDER BY e.event_date ASC
+    ");
+
+    $stmt->bind_param("i", $id_user);
+    $stmt->execute();
+    $participations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    // itens escolhidos
+    foreach ($participations as &$p) {
+        $stmt2 = $db->prepare("
+            SELECT i.name
+            FROM user_event_items uei
+            JOIN items i ON i.id_item = uei.id_item
+            WHERE uei.id_participation = ?
+        ");
+        $stmt2->bind_param("i", $p["id_participation"]);
+        $stmt2->execute();
+        $p["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    return $participations;
+}
+
+//evetnso passados que o user participou
+public static function getPastParticipationByUser($id_user) {
+    $db = DB::conn();
+
+    $stmt = $db->prepare("
+        SELECT 
+            e.id_event,
+            e.name,
+            e.event_date,
+            e.location,
+            c.name AS collection_name,
+            uep.id_collection,
+            uep.id_participation
+        FROM user_event_participation uep
+        JOIN events e ON e.id_event = uep.id_event
+        JOIN collections c ON c.id_collection = uep.id_collection
+        WHERE uep.id_user = ?
+          AND e.event_date < CURDATE()
+        ORDER BY e.event_date DESC
+    ");
+
+    $stmt->bind_param("i", $id_user);
+    $stmt->execute();
+    $participations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($participations as &$p) {
+        $stmt2 = $db->prepare("
+            SELECT i.name
+            FROM user_event_items uei
+            JOIN items i ON i.id_item = uei.id_item
+            WHERE uei.id_participation = ?
+        ");
+        $stmt2->bind_param("i", $p["id_participation"]);
+        $stmt2->execute();
+        $p["items"] = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    return $participations;
+}
+
+
 // UPDATE EVENT (OWNER ONLY)
-// ==========================
 public static function updateEvent($id_event, $name, $event_date, $description, $location, $id_user) {
     $db = DB::conn();
 

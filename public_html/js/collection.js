@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Apagar Item
     document.addEventListener("click", async (e) => {
         if (!e.target.classList.contains("btn-delete-item")) return;
-        if (!confirm("Confirm delete?")) return;
+        if (!confirm("Are you sure you want to delete this item from this collection?")) return;
         const idItem = e.target.dataset.id;
         const resp = await fetch("controllers/item_delete.php", {
             method: "POST",

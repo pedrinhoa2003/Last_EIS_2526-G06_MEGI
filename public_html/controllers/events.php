@@ -3,6 +3,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../partials/bootstrap.php";
 require_once __DIR__ . "/../dal/EventDAL.php";
+require_once __DIR__ . "/../config/db.php";
 
 $method = $_SERVER["REQUEST_METHOD"];
 
@@ -79,10 +80,98 @@ if ($method === "POST") {
 
     EventDAL::addCollectionsToEvent($id_event, $collections);
     EventDAL::addItemsToEvent($id_event, $items);
+    
+    
+    // PARTICIPAÇÃO AUTOMÁTICA DO CRIADOR + ITEMS
 
+    $db = DB::conn();
+    $db->set_charset("utf8mb4");
+
+    $participations = [];
+
+    // 1) inserir participações (user_event_participation)
+    $stmtPart = $db->prepare("
+        INSERT INTO user_event_participation (id_user, id_event, id_collection)
+        VALUES (?, ?, ?)
+    ");
+
+    if (!$stmtPart) {
+        http_response_code(500);
+        echo json_encode(["ok" => false, "error" => $db->error]);
+        exit;
+    }
+
+    foreach ($collections as $cid) {
+        $cid = (int)$cid;
+        if (!$cid) continue;
+
+        $stmtPart->bind_param("iii", $id_user, $id_event, $cid);
+        $stmtPart->execute();
+
+        // guardar id_participation para esta coleção
+        $participations[$cid] = $db->insert_id;
+    }
+
+    $stmtPart->close();
+
+    // 2) inserir items escolhidos (user_event_items)
+    $stmtItems = $db->prepare("
+        INSERT INTO user_event_items (id_participation, id_item)
+        VALUES (?, ?)
+    ");
+
+    if (!$stmtItems) {
+        http_response_code(500);
+        echo json_encode(["ok" => false, "error" => $db->error]);
+        exit;
+    }
+
+    /*
+    $items vem do JS assim:
+    items: [ "8", "13", "15" ]
+    OU
+    items: [ {id_item, id_collection} ]  (dependendo do teu JS)
+    */
+
+    // adapta conforme o teu formato REAL
+    foreach ($items as $it) {
+
+        // CASO 1: items = [id_item]
+        if (is_numeric($it)) {
+            $id_item = (int)$it;
+
+            //  saber a coleção do item
+            // se cada item pertence a UMA coleção
+            $res = $db->query("
+                SELECT id_collection
+                FROM collection_items
+                WHERE id_item = $id_item
+                LIMIT 1
+            ");
+
+            if (!$res || !$row = $res->fetch_assoc()) continue;
+            $cid = (int)$row["id_collection"];
+
+        // CASO 2: items = [{id_item, id_collection}]
+        } else {
+            $id_item = (int)($it["id_item"] ?? 0);
+            $cid     = (int)($it["id_collection"] ?? 0);
+        }
+
+        if (!$id_item || !isset($participations[$cid])) continue;
+
+        $id_participation = $participations[$cid];
+        $stmtItems->bind_param("ii", $id_participation, $id_item);
+        $stmtItems->execute();
+    }
+
+    $stmtItems->close();
     echo json_encode(["ok" => true, "id_event" => $id_event]);
     exit;
-}
+    }
+
+
+
 
 /**
  * PUT → editar (apenas se created_by = user)
